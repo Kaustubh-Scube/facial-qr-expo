@@ -1,4 +1,3 @@
-import { DetectionOverlay } from '@/components/DetectionOverlay';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import {
@@ -28,10 +27,10 @@ const CameraScreen = ({ }: Props) => {
     const [detections, setDetections] = React.useState<unknown[]>([])
 
     const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
-    const device = useCameraDevice('back')
+    const device = useCameraDevice('front')
 
     // from https://www.kaggle.com/models/tensorflow/efficientdet/frameworks/tfLite
-    const model = useTensorflowModel(require('../assets/models/efficientdet.tflite'))
+    const model = useTensorflowModel(require('../assets/models/mobile_face_net.tflite'))
     const actualModel = model.state === 'loaded' ? model.model : undefined
 
     const runOnDetections = useRunOnJS((workletDetections) => {
@@ -64,33 +63,33 @@ const CameraScreen = ({ }: Props) => {
             console.log(`Running inference on ${frame}`)
             const resized = resize(frame, {
                 scale: {
-                    width: 320,
-                    height: 320,
+                    width: 112,
+                    height: 112,
                 },
                 pixelFormat: 'rgb',
-                dataType: 'uint8',
+                dataType: 'float32',
             })
             const result = actualModel.runSync([resized])
 
-            const boxes = result[0]
-            const scores = result[2]
-            const count = result[3][0]
+            // const boxes = result[0]
+            // const scores = result[2]
+            // const count = result[3][0]
 
-            const dets = []
+            // const dets = []
 
-            for (let i = 0; i < count; i++) {
-                if (scores[i] < 0.5) continue
+            // for (let i = 0; i < count; i++) {
+            //     if (scores[i] < 0.5) continue
 
-                dets.push({
-                    xmin: boxes[i * 4 + 1],
-                    ymin: boxes[i * 4 + 0],
-                    xmax: boxes[i * 4 + 3],
-                    ymax: boxes[i * 4 + 2],
-                    score: scores[i],
-                })
-            }
-            runOnDetections(dets)
-            // console.log(result, "RESULT");
+            //     dets.push({
+            //         xmin: boxes[i * 4 + 1],
+            //         ymin: boxes[i * 4 + 0],
+            //         xmax: boxes[i * 4 + 3],
+            //         ymax: boxes[i * 4 + 2],
+            //         score: scores[i],
+            //     })
+            // }
+            // runOnDetections(dets)
+            console.log(result, "RESULT");
             // const num_detections = result[3]?.[0] ?? 0
             // console.log('Result: ' + num_detections)
         },
@@ -115,6 +114,7 @@ const CameraScreen = ({ }: Props) => {
         <View style={styles.container}>
             {hasCameraPermission && device != null ? (
                 <Camera
+
                     device={device}
                     style={StyleSheet.absoluteFill}
                     isActive={true}
@@ -126,7 +126,7 @@ const CameraScreen = ({ }: Props) => {
             )}
 
             {/* 🔥 DRAW BOXES HERE */}
-            <DetectionOverlay detections={detections as any[]} />
+            {/* <DetectionOverlay detections={detections as any[]} /> */}
 
             {model.state === 'loading' && (
                 <ActivityIndicator size="small" color="white" />
