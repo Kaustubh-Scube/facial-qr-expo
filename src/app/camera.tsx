@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
     Tensor,
     TensorflowModel,
     useTensorflowModel
 } from 'react-native-fast-tflite';
 import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
-import { useRunOnJS } from 'react-native-worklets-core';
+import { useRunOnJS, useSharedValue } from 'react-native-worklets-core';
 import { useResizePlugin } from 'vision-camera-resize-plugin';
 
 type Props = {}
@@ -33,6 +33,8 @@ const CameraScreen = ({ }: Props) => {
     const model = useTensorflowModel(require('../assets/models/mobile_face_net.tflite'))
     const actualModel = model.state === 'loaded' ? model.model : undefined
 
+    const shouldInfer = useSharedValue(false)
+
     const runOnDetections = useRunOnJS((workletDetections) => {
         setDetections(workletDetections)
     }, [])
@@ -52,15 +54,14 @@ const CameraScreen = ({ }: Props) => {
     const frameProcessor = useFrameProcessor(
         (frame) => {
             'worklet'
-            if (actualModel == null) {
-                // model is still loading...
+
+            if (!shouldInfer.value || actualModel == null) {
                 return
-            };
+            }
 
-            if (frame.timestamp - lastSent < 200) return
-            lastSent = frame.timestamp
+            // ✅ Run only once
+            shouldInfer.value = false
 
-            console.log(`Running inference on ${frame}`)
             const resized = resize(frame, {
                 scale: {
                     width: 112,
@@ -69,38 +70,75 @@ const CameraScreen = ({ }: Props) => {
                 pixelFormat: 'rgb',
                 dataType: 'float32',
             })
-            const result = actualModel.runSync([resized])
 
-            // const boxes = result[0]
-            // const scores = result[2]
-            // const count = result[3][0]
+            const result = actualModel.runSync([resized]);
 
-            // const dets = []
+            console.log(result, "RESULT")
 
-            // for (let i = 0; i < count; i++) {
-            //     if (scores[i] < 0.5) continue
-
-            //     dets.push({
-            //         xmin: boxes[i * 4 + 1],
-            //         ymin: boxes[i * 4 + 0],
-            //         xmax: boxes[i * 4 + 3],
-            //         ymax: boxes[i * 4 + 2],
-            //         score: scores[i],
-            //     })
-            // }
-            // runOnDetections(dets)
-            console.log(result, "RESULT");
-            // const num_detections = result[3]?.[0] ?? 0
-            // console.log('Result: ' + num_detections)
+            // FaceNet output [192]
+            runOnDetections(result)
         },
         [actualModel]
     )
+
+    const onCapturePress = async () => {
+        shouldInfer.value = true
+    }
+
+    // const frameProcessor = useFrameProcessor(
+    //     (frame) => {
+    //         'worklet'
+    //         if (actualModel == null) {
+    //             // model is still loading...
+    //             return
+    //         };
+
+    //         if (frame.timestamp - lastSent < 200) return
+    //         lastSent = frame.timestamp
+
+    //         console.log(`Running inference on ${frame}`)
+    //         const resized = resize(frame, {
+    //             scale: {
+    //                 width: 112,
+    //                 height: 112,
+    //             },
+    //             pixelFormat: 'rgb',
+    //             dataType: 'float32',
+    //         })
+    //         const result = actualModel.runSync([resized])
+
+    //         // const boxes = result[0]
+    //         // const scores = result[2]
+    //         // const count = result[3][0]
+
+    //         // const dets = []
+
+    //         // for (let i = 0; i < count; i++) {
+    //         //     if (scores[i] < 0.5) continue
+
+    //         //     dets.push({
+    //         //         xmin: boxes[i * 4 + 1],
+    //         //         ymin: boxes[i * 4 + 0],
+    //         //         xmax: boxes[i * 4 + 3],
+    //         //         ymax: boxes[i * 4 + 2],
+    //         //         score: scores[i],
+    //         //     })
+    //         // }
+    //         // runOnDetections(dets)
+    //         console.log(result, "RESULT");
+    //         // const num_detections = result[3]?.[0] ?? 0
+    //         // console.log('Result: ' + num_detections)
+    //     },
+    //     [actualModel]
+    // )
 
     React.useEffect(() => {
         requestCameraPermission()
     }, [requestCameraPermission])
 
     console.log(`Model: ${model.state} (${model.model != null})`)
+
+    console.log(detections, "DETECTION")
 
     if (!device || !hasCameraPermission) {
         return (
@@ -114,7 +152,6 @@ const CameraScreen = ({ }: Props) => {
         <View style={styles.container}>
             {hasCameraPermission && device != null ? (
                 <Camera
-
                     device={device}
                     style={StyleSheet.absoluteFill}
                     isActive={true}
@@ -124,6 +161,11 @@ const CameraScreen = ({ }: Props) => {
             ) : (
                 <Text>No Camera available.</Text>
             )}
+
+            <TouchableOpacity onPress={onCapturePress} style={{ backgroundColor: "#222", padding: 16 }}>
+                <Text style={{ color: 'white' }}>Capture Face</Text>
+            </TouchableOpacity>
+
 
             {/* 🔥 DRAW BOXES HERE */}
             {/* <DetectionOverlay detections={detections as any[]} /> */}
