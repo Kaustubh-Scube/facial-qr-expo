@@ -46,9 +46,15 @@
         "react-native-vision-camera",
         {
           "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera.",
-          // optionally, if you want to record audio:
           "enableMicrophonePermission": true,
           "microphonePermissionText": "$(PRODUCT_NAME) needs access to your Microphone."
+        }
+      ],
+      [
+        "react-native-nitro-inspire-face",
+        {
+          "modelName": "Pikachu", // Optional: specify model to bundle (e.g., "Pikachu" or "Megatron")
+          "modelDir": "./src/assets/models" // Optional: custom directory for model files (defaults to project root)
         }
       ]
     ],

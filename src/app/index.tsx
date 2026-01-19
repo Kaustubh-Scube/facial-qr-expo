@@ -13,11 +13,20 @@ export default function Index() {
       <Text>Edit app/index.tsx to edit this screen.</Text>
 
       <TouchableOpacity
-        style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8 }}
+        style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8, marginBottom: 16 }}
         onPress={() => router.navigate("/camera")}
       >
         <Text>
           Open AI Camera
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8 }}
+        onPress={() => router.navigate("/example-inspire-face")}
+      >
+        <Text>
+          Open Inspire Face Example
         </Text>
       </TouchableOpacity>
     </View>

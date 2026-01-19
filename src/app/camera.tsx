@@ -1,192 +1,162 @@
-import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Skia } from "@shopify/react-native-skia";
+import { useEffect, useRef } from "react";
+import { View } from "react-native";
 import {
-    Tensor,
-    TensorflowModel,
-    useTensorflowModel
-} from 'react-native-fast-tflite';
-import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
-import { useRunOnJS, useSharedValue } from 'react-native-worklets-core';
-import { useResizePlugin } from 'vision-camera-resize-plugin';
+    BoxedInspireFace,
+    CameraRotation,
+    DetectMode,
+    InspireFace,
+    Session,
+} from "react-native-nitro-inspire-face";
+import {
+    Camera,
+    DrawableFrame,
+    Templates,
+    useCameraDevice,
+    useCameraFormat,
+    useSkiaFrameProcessor,
+} from "react-native-vision-camera";
+import { useRunOnJS } from "react-native-worklets-core";
+import { useResizePlugin } from "vision-camera-resize-plugin";
 
-type Props = {}
+//Launch the model package
+InspireFace.launch("Pikachu");
 
-function tensorToString(tensor: Tensor): string {
-    return `\n  - ${tensor.dataType} ${tensor.name}[${tensor.shape}]`
-}
-function modelToString(model: TensorflowModel): string {
-    return (
-        `TFLite Model (${model.delegate}):\n` +
-        `- Inputs: ${model.inputs.map(tensorToString).join('')}\n` +
-        `- Outputs: ${model.outputs.map(tensorToString).join('')}`
-    )
-}
-
-const CameraScreen = ({ }: Props) => {
-
-    const [detections, setDetections] = React.useState<unknown[]>([])
-
-    const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
-    const device = useCameraDevice('front')
-
-    // from https://www.kaggle.com/models/tensorflow/efficientdet/frameworks/tfLite
-    const model = useTensorflowModel(require('../assets/models/mobile_face_net.tflite'))
-    const actualModel = model.state === 'loaded' ? model.model : undefined
-
-    const shouldInfer = useSharedValue(false)
-
-    const runOnDetections = useRunOnJS((workletDetections) => {
-        setDetections(workletDetections)
-    }, [])
-
-    useEffect(() => {
-        requestCameraPermission();
-    }, []);
-
-    React.useEffect(() => {
-        if (actualModel == null) return
-        console.log(`Model loaded! Shape:\n${modelToString(actualModel)}]`)
-    }, [actualModel]);
-
+export default function Example() {
+    let device = useCameraDevice("front");
+    const camera = useRef<Camera>(null);
     const { resize } = useResizePlugin();
 
-    let lastSent = 0;
-    const frameProcessor = useFrameProcessor(
-        (frame) => {
-            'worklet'
+    const format = useCameraFormat(device, Templates.FrameProcessing);
 
-            if (!shouldInfer.value || actualModel == null) {
-                return
-            }
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color("blue"));
 
-            // ✅ Run only once
-            shouldInfer.value = false
+    let session: Session
 
-            const resized = resize(frame, {
-                scale: {
-                    width: 112,
-                    height: 112,
-                },
-                pixelFormat: 'rgb',
-                dataType: 'float32',
-            })
+    useEffect(() => {
+        session = InspireFace.createSession(
+            {
+                enableRecognition: true,
+                enableFaceQuality: true,
+                enableFaceAttribute: true,
+                enableInteractionLiveness: true,
+                enableLiveness: true,
+                enableMaskDetect: true,
+            },
+            DetectMode.ALWAYS_DETECT,
+            10,
+            -1,
+            -1
+        );
+        session.setTrackPreviewSize(320);
+        session.setFaceDetectThreshold(0.5);
+    }, []);
 
-            const result = actualModel.runSync([resized]);
+    const runInspireFace = (resizedFrame: Uint8Array<ArrayBufferLike>, size: number, scaleX: number, cropOffset: number, frame: DrawableFrame) => {
+        if (!resizedFrame) return;
 
-            console.log(result, "RESULT")
+        // Unbox InspireFace instance for frame processor
+        const unboxedInspireFace = BoxedInspireFace.unbox();
 
-            // FaceNet output [192]
-            runOnDetections(result)
-        },
-        [actualModel]
-    )
+        // Create image bitmap from frame buffer
+        const bitmap = unboxedInspireFace.createImageBitmapFromBuffer(
+            resizedFrame.buffer as ArrayBuffer,
+            size,
+            size,
+            3
+        );
 
-    const onCapturePress = async () => {
-        shouldInfer.value = true
+        // Create image stream for face detection
+        const imageStream = unboxedInspireFace.createImageStreamFromBitmap(
+            bitmap,
+            CameraRotation.ROTATION_0
+        );
+
+        // Unbox session and execute face detection
+        const faces = session.executeFaceTrack(imageStream);
+
+        // Draw facial landmarks for each detected face
+        for (let i = 0; i < faces.length; i++) {
+            const lmk = unboxedInspireFace.getFaceDenseLandmarkFromFaceToken(
+                faces[i].token
+            );
+            const path = Skia.Path.Make();
+
+            // Draw landmark points
+            lmk.forEach((point) => {
+                path.addCircle(point.y * scaleX + cropOffset, point.x * scaleX, 3);
+            });
+
+            // Draw landmarks to canvas
+            frame.drawPath(path, paint);
+        }
+
+        // Clean up resources
+        imageStream.dispose();
+        bitmap.dispose();
     }
 
-    // const frameProcessor = useFrameProcessor(
-    //     (frame) => {
-    //         'worklet'
-    //         if (actualModel == null) {
-    //             // model is still loading...
-    //             return
-    //         };
+    const runOnDetection = useRunOnJS(({
+        resizedFrame,
+        size,
+        cropOffset,
+        scaleX,
+        frame,
+    }: {
+        resizedFrame: Uint8Array<ArrayBufferLike>,
+        size: number,
+        scaleX: number,
+        cropOffset: number,
+        frame: DrawableFrame
+    }) => {
+        runInspireFace(resizedFrame, size, scaleX, cropOffset, frame)
+    }, []);
 
-    //         if (frame.timestamp - lastSent < 200) return
-    //         lastSent = frame.timestamp
+    const frameProcessor = useSkiaFrameProcessor((frame) => {
+        "worklet";
 
-    //         console.log(`Running inference on ${frame}`)
-    //         const resized = resize(frame, {
-    //             scale: {
-    //                 width: 112,
-    //                 height: 112,
-    //             },
-    //             pixelFormat: 'rgb',
-    //             dataType: 'float32',
-    //         })
-    //         const result = actualModel.runSync([resized])
+        // Draw the frame to the canvas
+        frame.render();
 
-    //         // const boxes = result[0]
-    //         // const scores = result[2]
-    //         // const count = result[3][0]
+        const size = 320;
+        const frameWidth = frame.height; // 720
+        const scaleX = frameWidth / size; // Scale based on processed width
+        const cropOffset = (frame.width - frame.height) / 2; // Adjust for cropping
 
-    //         // const dets = []
+        // Resize frame for processing
+        const resized = resize(frame, {
+            scale: {
+                width: size,
+                height: size,
+            },
+            rotation: "90deg",
+            pixelFormat: "bgr",
+            dataType: "uint8",
+            mirror: true,
+        });
 
-    //         // for (let i = 0; i < count; i++) {
-    //         //     if (scores[i] < 0.5) continue
+        runOnDetection({
+            resizedFrame: resized,
+            size,
+            cropOffset,
+            scaleX,
+            frame,
+        });
+        
+    }, []);
 
-    //         //     dets.push({
-    //         //         xmin: boxes[i * 4 + 1],
-    //         //         ymin: boxes[i * 4 + 0],
-    //         //         xmax: boxes[i * 4 + 3],
-    //         //         ymax: boxes[i * 4 + 2],
-    //         //         score: scores[i],
-    //         //     })
-    //         // }
-    //         // runOnDetections(dets)
-    //         console.log(result, "RESULT");
-    //         // const num_detections = result[3]?.[0] ?? 0
-    //         // console.log('Result: ' + num_detections)
-    //     },
-    //     [actualModel]
-    // )
-
-    React.useEffect(() => {
-        requestCameraPermission()
-    }, [requestCameraPermission])
-
-    console.log(`Model: ${model.state} (${model.model != null})`)
-
-    console.log(detections, "DETECTION")
-
-    if (!device || !hasCameraPermission) {
-        return (
-            <View>
-                <Text>Allow Permission to camera from setting</Text>
-            </View>
-        )
-    };
-
+    //The CameraPermissionGuard is just a wrapper to check for permissions
     return (
-        <View style={styles.container}>
-            {hasCameraPermission && device != null ? (
-                <Camera
-                    device={device}
-                    style={StyleSheet.absoluteFill}
-                    isActive={true}
-                    frameProcessor={frameProcessor}
-                    pixelFormat="yuv"
-                />
-            ) : (
-                <Text>No Camera available.</Text>
-            )}
-
-            <TouchableOpacity onPress={onCapturePress} style={{ backgroundColor: "#222", padding: 16 }}>
-                <Text style={{ color: 'white' }}>Capture Face</Text>
-            </TouchableOpacity>
-
-
-            {/* 🔥 DRAW BOXES HERE */}
-            {/* <DetectionOverlay detections={detections as any[]} /> */}
-
-            {model.state === 'loading' && (
-                <ActivityIndicator size="small" color="white" />
-            )}
-
-            {model.state === 'error' && (
-                <Text>Failed to load model! {model.error.message}</Text>
-            )}
+        <View style={{ flex: 1 }}>
+            <Camera
+                ref={camera}
+                style={{ flex: 1 }}
+                device={device!}
+                isActive={true}
+                format={format}
+                frameProcessor={frameProcessor}
+            />
         </View>
-    )
+    );
 }
-
-export default CameraScreen
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-})
