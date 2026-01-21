@@ -5,7 +5,7 @@ export default function RootLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ title: "Welcome" }} />
       <Stack.Screen name="camera" options={{ title: "AI Camera" }} />
-      <Stack.Screen name="example-inspire-face" options={{ title: "AI Camera" }} />
+      {/* <Stack.Screen name="example-inspire-face" options={{ title: "AI Camera" }} /> */}
     </Stack>
   );
 }

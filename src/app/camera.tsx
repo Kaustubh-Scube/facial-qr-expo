@@ -143,7 +143,7 @@ export default function Example() {
             scaleX,
             frame,
         });
-        
+
     }, []);
 
     //The CameraPermissionGuard is just a wrapper to check for permissions

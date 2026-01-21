@@ -53,14 +53,20 @@
       [
         "react-native-nitro-inspire-face",
         {
-          "modelName": "Pikachu", // Optional: specify model to bundle (e.g., "Pikachu" or "Megatron")
-          "modelDir": "./src/assets/models" // Optional: custom directory for model files (defaults to project root)
+          "modelName": "Pikachu",
+          "modelDir": "./src/assets/models"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "minSdkVersion": 26
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": false
     }
   }
 }

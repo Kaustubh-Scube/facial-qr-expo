@@ -23,7 +23,7 @@ export default function Index() {
 
       <TouchableOpacity
         style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8 }}
-        onPress={() => router.navigate("/example-inspire-face")}
+      // onPress={() => router.navigate("/example-inspire-face")}
       >
         <Text>
           Open Inspire Face Example
