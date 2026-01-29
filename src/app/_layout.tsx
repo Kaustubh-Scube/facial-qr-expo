@@ -5,6 +5,7 @@ export default function RootLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ title: "Welcome" }} />
       <Stack.Screen name="camera" options={{ title: "AI Camera" }} />
+      <Stack.Screen name="face-detection" options={{ title: "Face Detection Camera" }} />
     </Stack>
   );
 }

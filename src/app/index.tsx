@@ -20,6 +20,15 @@ export default function Index() {
           Open AI Camera
         </Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8, marginTop: 20 }}
+        onPress={() => router.navigate("/face-detection")}
+      >
+        <Text>
+          Open Face Detection Camera
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
