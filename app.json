@@ -29,7 +29,13 @@
     },
     "plugins": [
       "expo-router",
-      "react-native-fast-tflite",
+      [
+        "react-native-fast-tflite",
+        {
+          "enableCoreMLDelegate": true,
+          "enableAndroidGpuLibraries": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -62,6 +68,12 @@
             "useFrameworks": "static",
             "buildReactNativeFromSource": true
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
       ],
       "expo-font"

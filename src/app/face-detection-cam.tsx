@@ -99,6 +99,7 @@ export default function App() {
                 // ... chain some asynchronous frame processor
                 // ... do something asynchronously with frame
                 handleDetectedFaces(faces)
+                // const result = actualModel?.runSync(faces)
             })
             // ... chain frame processors
             // ... do something with frame
