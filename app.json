@@ -29,7 +29,13 @@
     },
     "plugins": [
       "expo-router",
-      "react-native-fast-tflite",
+      [
+        "react-native-fast-tflite",
+        {
+          "enableAndroidGpuLibraries": true,
+          "enableCoreMLDelegate": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -53,15 +59,19 @@
       [
         "expo-build-properties",
         {
+          "android": {
+            "minSdkVersion": 26
+          },
           "ios": {
-            "deploymentTarget": "15.5"
+            "deploymentTarget": "15.5",
+            "useFrameworks": "static",
+            "buildReactNativeFromSource": true
           }
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }
