@@ -1579,6 +1579,11 @@
   resolved "https://registry.yarnpkg.com/@react-native-ml-kit/face-detection/-/face-detection-2.0.1.tgz#bd95ff1d908b58dd9426c9f5c55b3aaabed2f49e"
   integrity sha512-TOUwO90LRnJ3VhJYTS2VJbxtzDeaKjm6UjGufgqYjQbPsFCOwRtnmwBbjXZ0v5ih/Fmfjffb0W1I3c1773Q85Q==
 
+"@react-native-ml-kit/text-recognition@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@react-native-ml-kit/text-recognition/-/text-recognition-2.0.0.tgz#b0a707f908d3e57a220cc665b6b615c8d4575bd1"
+  integrity sha512-RHefLYKndSyoDtgqHQptYQe+mftFk6/H30IQDenKX7PgMlJqoDejX+HdZ8gnP1kVNAt3iH+wyl/P6vCOkLMW9Q==
+
 "@react-native/assets-registry@0.81.5":
   version "0.81.5"
   resolved "https://registry.yarnpkg.com/@react-native/assets-registry/-/assets-registry-0.81.5.tgz#d22c924fa6f6d4a463c5af34ce91f38756c0fa7d"
@@ -5714,6 +5719,11 @@ react-native-vision-camera-face-detector@^1.10.1:
   version "1.10.1"
   resolved "https://registry.yarnpkg.com/react-native-vision-camera-face-detector/-/react-native-vision-camera-face-detector-1.10.1.tgz#c139f934d829c0418772bc46498ed6b416ac6371"
   integrity sha512-KTGJNVh2KszeMnVs/QsSYyUIu2wmZA0H3cQLaOqNXDsc33HB32EPRhO/+A574GGw0/FuYEAnBp3+hFnMCSISGA==
+
+react-native-vision-camera-plugin-frame-to-file@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/react-native-vision-camera-plugin-frame-to-file/-/react-native-vision-camera-plugin-frame-to-file-0.4.0.tgz#ecbb8d9ba3ae6e811ab977e41012c75c0d8c7307"
+  integrity sha512-/k7fHVZ2idGkK8i88T3KFNKZk5M5hZO6ULjtLJohH0m2xwrX3/5WOEj2LMuU7jpRj+IguA2gc749j1CjtZM6Yg==
 
 react-native-vision-camera@^4.7.3:
   version "4.7.3"

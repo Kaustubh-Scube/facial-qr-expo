@@ -1,74 +1,66 @@
-import React, {
-    useEffect,
-    useRef
-} from 'react'
+import { createSkiaImageFromData } from '@/utils/SkiaUtils';
 import {
-    StyleSheet,
-    Text,
-    View
-} from 'react-native'
-import { Tensor, TensorflowModel, useTensorflowModel } from 'react-native-fast-tflite'
+    Canvas,
+    Image,
+    SkData,
+    Skia,
+    SkImage,
+} from '@shopify/react-native-skia';
+import * as React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useTensorflowModel } from 'react-native-fast-tflite';
+import { useSharedValue } from 'react-native-reanimated';
 import {
     Camera,
     runAsync,
     useCameraDevice,
+    useCameraPermission,
     useFrameProcessor
-} from 'react-native-vision-camera'
+} from 'react-native-vision-camera';
 import {
     Face,
     FrameFaceDetectionOptions,
     useFaceDetector
-} from 'react-native-vision-camera-face-detector'
-import { Worklets } from 'react-native-worklets-core'
-import { useResizePlugin } from 'vision-camera-resize-plugin'
+} from 'react-native-vision-camera-face-detector';
+import { useRunOnJS, Worklets } from 'react-native-worklets-core';
+import { Options, useResizePlugin } from 'vision-camera-resize-plugin';
 
-function tensorToString(tensor: Tensor): string {
-    return `\n  - ${tensor.dataType} ${tensor.name}[${tensor.shape}]`
-}
-function modelToString(model: TensorflowModel): string {
-    return (
-        `TFLite Model (${model.delegate}):\n` +
-        `- Inputs: ${model.inputs.map(tensorToString).join('')}\n` +
-        `- Outputs: ${model.outputs.map(tensorToString).join('')}`
-    )
-}
+type PixelFormat = Options<'uint8'>['pixelFormat'];
+
+const WIDTH = 112;
+const HEIGHT = 112;
+const TARGET_TYPE = 'uint8' as const;
+const TARGET_FORMAT: PixelFormat = 'rgba';
 
 export default function App() {
 
     const [detectedFaces, setDetectedFaces] = React.useState<Face>();
-    const hasDetectedFaceRef = useRef(false)
-
-    const faceDetectionOptions = useRef<FrameFaceDetectionOptions>({
+    const hasDetectedFaceRef = React.useRef(false)
+    const faceDetectionOptions = React.useRef<FrameFaceDetectionOptions>({
         trackingEnabled: true,
         landmarkMode: "all",
         // detection options
-    }).current
+    }).current;
 
+    const model = useTensorflowModel(require("../assets/models/mobile_face_net.tflite"));
+    const actualModel = model.state === "loaded" ? model.model : undefined;
+
+    const permission = useCameraPermission();
     const device = useCameraDevice('front');
+    const previewImage = useSharedValue<SkImage | null>(null);
 
-    const model = useTensorflowModel(require('../assets/models/mobile_face_net.tflite'))
-    const actualModel = model.state === 'loaded' ? model.model : undefined
+    React.useEffect(() => {
+        permission.requestPermission();
+    }, [permission]);
+
+    const plugin = useResizePlugin();
 
     const {
         detectFaces,
         stopListeners
     } = useFaceDetector(faceDetectionOptions)
 
-    const { resize } = useResizePlugin();
-
     React.useEffect(() => {
-        if (actualModel == null) return
-        console.log(`Model loaded! Shape:\n${modelToString(actualModel)}]`)
-    }, [actualModel])
-
-    useEffect(() => {
-        return () => {
-            // you must call `stopListeners` when current component is unmounted
-            stopListeners()
-        }
-    }, [])
-
-    useEffect(() => {
         if (!device) {
             // you must call `stopListeners` when `Camera` component is unmounted
             stopListeners()
@@ -81,6 +73,23 @@ export default function App() {
         })()
     }, [device])
 
+    React.useEffect(() => {
+        return () => {
+            // you must call `stopListeners` when current component is unmounted
+            stopListeners()
+        }
+    }, [])
+
+    const updatePreviewImageFromData = useRunOnJS(
+        (data: SkData, pixelFormat: PixelFormat) => {
+            const image = createSkiaImageFromData(data, WIDTH, HEIGHT, pixelFormat);
+            previewImage.value?.dispose();
+            previewImage.value = image;
+            data.dispose();
+        },
+        []
+    );
+
     const handleDetectedFaces = Worklets.createRunOnJS((faces: Face[]) => {
         if (faces.length === 0) return
 
@@ -88,57 +97,121 @@ export default function App() {
         hasDetectedFaceRef.current = true
     });
 
-    const frameProcessor = useFrameProcessor((frame) => {
-        'worklet'
+    const frameProcessor = useFrameProcessor(
+        (frame) => {
+            'worklet';
 
-        if (!hasDetectedFaceRef.current) {
-            runAsync(frame, () => {
-                'worklet';
+            const start = performance.now();
 
-                const faces = detectFaces(frame)
-                // ... chain some asynchronous frame processor
-                // ... do something asynchronously with frame
-                handleDetectedFaces(faces)
-                // const result = actualModel?.runSync(faces)
-            })
-            // ... chain frame processors
-            // ... do something with frame
-        };
+            if (!hasDetectedFaceRef.current) {
+                runAsync(frame, () => {
+                    'worklet';
 
-        if (!actualModel || !detectedFaces) { return; };
+                    const faces = detectFaces(frame)
+                    // ... chain some asynchronous frame processor
+                    // ... do something asynchronously with frame
+                    handleDetectedFaces(faces)
+                })
+                // ... chain frame processors
+                // ... do something with frame
+            };
 
-        const resized = resize(frame, {
-            crop: {
-                x: detectedFaces.bounds.x,
-                y: detectedFaces.bounds.y,
-                width: detectedFaces.bounds.width,
-                height: detectedFaces.bounds.height,
-            },
-            scale: {
-                width: 112,
-                height: 112,
-            },
-            pixelFormat: 'rgb',
-            dataType: 'float32',
-        })
-        const result = actualModel.runSync([resized]);
+            if (!detectedFaces) return;
 
-        console.log(result, "RESULT_FACE")
+            const resized = plugin.resize(frame, {
+                crop: {
+                    x: detectedFaces.bounds.x,
+                    y: detectedFaces.bounds.y,
+                    width: detectedFaces.bounds.width,
+                    height: detectedFaces.bounds.height,
+                },
+                scale: {
+                    width: 112,
+                    height: 112,
+                },
+                pixelFormat: 'rgb',
+                dataType: 'float32',
+                rotation: "90deg",
+                mirror: false,
+            });
 
-    }, [handleDetectedFaces]);
+            const previewResized = plugin.resize(frame, {
+                crop: {
+                    x: detectedFaces.bounds.x,
+                    y: detectedFaces.bounds.y,
+                    width: detectedFaces.bounds.width,
+                    height: detectedFaces.bounds.height,
+                },
+                scale: {
+                    width: WIDTH,
+                    height: HEIGHT,
+                },
+                dataType: TARGET_TYPE,
+                pixelFormat: TARGET_FORMAT,
+                rotation: "90deg",
+                mirror: false,
+            });
 
-    console.log(detectedFaces, "detectedFaces")
+            if (actualModel) {
+                const result = actualModel.runSync([resized]);
+
+                console.log(result, "RESULT");
+            }
+
+            const data = Skia.Data.fromBytes(previewResized);
+            updatePreviewImageFromData(data, TARGET_FORMAT);
+            const end = performance.now();
+
+            console.log(
+                `Resized ${frame.width}x${frame.height} into 100x100 frame (${previewResized.length
+                }) in ${(end - start).toFixed(2)}ms`
+            );
+        },
+        [updatePreviewImageFromData, handleDetectedFaces]
+    );
 
     return (
-        <View style={{ flex: 1 }}>
-            {!!device ? <Camera
-                style={StyleSheet.absoluteFill}
-                device={device}
-                isActive={true}
-                frameProcessor={frameProcessor}
-            /> : <Text>
-                No Device
-            </Text>}
+        <View style={styles.container}>
+            {permission.hasPermission && device != null && (
+                <Camera
+                    device={device}
+                    enableFpsGraph
+                    style={StyleSheet.absoluteFill}
+                    isActive={true}
+                    pixelFormat="yuv"
+                    frameProcessor={frameProcessor}
+                />
+            )}
+            <View style={styles.canvasWrapper}>
+                <Canvas style={{ width: WIDTH, height: HEIGHT }}>
+                    <Image
+                        image={previewImage}
+                        x={0}
+                        y={0}
+                        width={WIDTH}
+                        height={HEIGHT}
+                        fit="cover"
+                    />
+                </Canvas>
+            </View>
         </View>
-    )
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    box: {
+        width: 60,
+        height: 60,
+        marginVertical: 20,
+    },
+    canvasWrapper: {
+        position: 'absolute',
+        bottom: 80,
+        left: 20,
+    },
+});
