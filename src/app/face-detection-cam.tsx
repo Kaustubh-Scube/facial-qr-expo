@@ -155,8 +155,7 @@ export default function App() {
             if (actualModel) {
                 const result = actualModel.runSync([resized]);
 
-                console.log(result, "RESULT");
-            }
+            };
 
             const data = Skia.Data.fromBytes(previewResized);
             updatePreviewImageFromData(data, TARGET_FORMAT);
@@ -178,7 +177,6 @@ export default function App() {
                     enableFpsGraph
                     style={StyleSheet.absoluteFill}
                     isActive={true}
-                    pixelFormat="yuv"
                     frameProcessor={frameProcessor}
                 />
             )}

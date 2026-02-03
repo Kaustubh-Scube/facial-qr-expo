@@ -58,7 +58,7 @@ export function createSkiaImageFromData(
     pixelFormat: PixelFormat
 ): SkImage | null {
     const componentsPerPixel = getComponentsPerPixel(pixelFormat);
-    return Skia.Image.MakeImage(
+    const img = Skia.Image.MakeImage(
         {
             width: width,
             height: height,
@@ -68,4 +68,7 @@ export function createSkiaImageFromData(
         data,
         width * componentsPerPixel
     );
+    console.log(img?.encodeToBase64(), "IMAGE_SKIA")
+
+    return img;
 }
