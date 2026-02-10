@@ -14,28 +14,10 @@ export default function Index() {
 
       <TouchableOpacity
         style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8 }}
-        onPress={() => router.navigate("/camera")}
+        onPress={() => router.navigate("/qr-scanner")}
       >
         <Text>
           Open AI Camera
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8, marginTop: 20 }}
-        onPress={() => router.navigate("/face-detection-cam")}
-      >
-        <Text>
-          Open Face Detection Camera
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{ paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "cyan", borderRadius: 8, marginTop: 20 }}
-        onPress={() => router.navigate("/face-detection-image")}
-      >
-        <Text>
-          Open Face Detection Gallery
         </Text>
       </TouchableOpacity>
     </View>

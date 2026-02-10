@@ -52,23 +52,13 @@
         "react-native-vision-camera",
         {
           "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera.",
-          "enableMicrophonePermission": true,
-          "microphonePermissionText": "$(PRODUCT_NAME) needs access to your Microphone."
+          "enableMicrophonePermission": false,
+          "microphonePermissionText": "$(PRODUCT_NAME) needs access to your Microphone.",
+          "enableCodeScanner": true
         }
       ],
       [
-        "expo-build-properties",
-        {
-          "android": {
-            "minSdkVersion": 26,
-            "buildToolsVersion": "35.0.0"
-          },
-          "ios": {
-            "deploymentTarget": "15.5",
-            "useFrameworks": "static",
-            "buildReactNativeFromSource": true
-          }
-        }
+        "expo-build-properties"
       ],
       [
         "expo-image-picker",
@@ -76,7 +66,15 @@
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "react-native-nitro-inspire-face",
+        {
+          "modelName": "Pikachu",
+          "modelDir": "./src/assets/models"
+        }
+      ],
+      "react-native-quick-crypto"
     ],
     "experiments": {
       "typedRoutes": true
