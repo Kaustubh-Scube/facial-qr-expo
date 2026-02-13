@@ -11,7 +11,7 @@ import { useResizePlugin } from "vision-camera-resize-plugin";
 
 type Props = {}
 
-InspireFace.launch('Megatron');
+InspireFace.launch('Pikachu');
 InspireFace.setAppleCoreMLInferenceMode(2);
 
 const { width, height } = Dimensions.get('window');
@@ -165,13 +165,13 @@ const FaceScannerScreen = ({ }: Props) => {
         // Unbox session and execute face detection
         const unboxedSession = session.current.unbox();
         const faces = unboxedSession.executeFaceTrack(imageStream);
-        // unboxedSession.multipleFacePipelineProcess(imageStream, faces, {
-        //     enableFaceQuality: true,
-        //     enableLiveness: true,
-        //     enableMaskDetect: true,
-        //     enableFaceAttribute: true,
-        //     enableInteractionLiveness: false,
-        // });
+        unboxedSession.multipleFacePipelineProcess(imageStream, faces, {
+            enableFaceQuality: true,
+            enableLiveness: true,
+            enableMaskDetect: true,
+            enableFaceAttribute: true,
+            enableInteractionLiveness: false,
+        });
 
         // console.log(faces[0].rect, "TOTAL_FACES")
         if (faces.length == 0) {

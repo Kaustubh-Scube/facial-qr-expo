@@ -63,7 +63,7 @@
       [
         "react-native-nitro-inspire-face",
         {
-          "modelName": "Megatron",
+          "modelName": "Pikachu",
           "modelDir": "./src/assets/models"
         }
       ],

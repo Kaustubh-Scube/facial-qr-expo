@@ -1,5 +1,4 @@
 import { decodeQRDataRN } from '@/utils/decompression';
-import { useIsFocused } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -19,20 +18,22 @@ const QrScannerScreen = ({ }: Props) => {
 
     const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
     const [barcodeMaskLayout, setBarcodeMaskLayout] = useState<{ target: number, layout: LayoutRectangle }>()
+    const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
 
-    const isFocused = useIsFocused();
     const device = useCameraDevice("back");
     const scannedRef = useRef<boolean>(false);
-    const cameraRef = useRef<Camera>(null);
 
     useEffect(() => {
         if (!hasCameraPermission) {
             requestCameraPermission();
         };
-        
-        // return () => {
-        //     cameraRef.current.
-        // }
+
+        if (hasCameraPermission) {
+            setIsCameraActive(true)
+        }
+        return () => {
+            setIsCameraActive(false);
+        }
     }, []);
 
     const codeScanner = useCodeScanner({
@@ -89,15 +90,12 @@ const QrScannerScreen = ({ }: Props) => {
 
     return (
         <View style={{ flex: 1 }}>
-            {isFocused && (
-                <Camera
-                    ref={cameraRef}
-                    style={{ flex: 1 }}
-                    device={device}
-                    isActive={isFocused}
-                    codeScanner={codeScanner}
-                />
-            )}
+            <Camera
+                style={{ flex: 1 }}
+                device={device}
+                isActive={isCameraActive}
+                codeScanner={codeScanner}
+            />
 
             <BarcodeMask
                 height={300}
