@@ -1,3 +1,4 @@
+import { FACE_HEIGHT, FACE_WIDTH, FACE_X, FACE_Y } from '@/libs/constants'
 import {
     Canvas,
     Path,
@@ -8,11 +9,6 @@ import React from 'react'
 import { Dimensions, StyleSheet } from 'react-native'
 
 const { width, height } = Dimensions.get('window')
-
-const FACE_WIDTH = width * 0.65
-const FACE_HEIGHT = FACE_WIDTH * 1.3
-const FACE_X = (width - FACE_WIDTH) / 2
-const FACE_Y = height * 0.25
 
 export const FaceAlignOverlay = () => {
     // Full screen

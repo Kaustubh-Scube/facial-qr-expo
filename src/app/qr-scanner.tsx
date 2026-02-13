@@ -23,11 +23,16 @@ const QrScannerScreen = ({ }: Props) => {
     const isFocused = useIsFocused();
     const device = useCameraDevice("back");
     const scannedRef = useRef<boolean>(false);
+    const cameraRef = useRef<Camera>(null);
 
     useEffect(() => {
         if (!hasCameraPermission) {
             requestCameraPermission();
         };
+        
+        // return () => {
+        //     cameraRef.current.
+        // }
     }, []);
 
     const codeScanner = useCodeScanner({
@@ -84,12 +89,15 @@ const QrScannerScreen = ({ }: Props) => {
 
     return (
         <View style={{ flex: 1 }}>
-            <Camera
-                style={{ flex: 1 }}
-                device={device}
-                isActive={isFocused}
-                codeScanner={codeScanner}
-            />
+            {isFocused && (
+                <Camera
+                    ref={cameraRef}
+                    style={{ flex: 1 }}
+                    device={device}
+                    isActive={isFocused}
+                    codeScanner={codeScanner}
+                />
+            )}
 
             <BarcodeMask
                 height={300}

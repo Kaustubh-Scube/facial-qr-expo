@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.kaustubhscube.facialqrexpo"
     },
     "android": {
@@ -29,13 +29,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "react-native-fast-tflite",
-        {
-          "enableCoreMLDelegate": true,
-          "enableAndroidGpuLibraries": true
-        }
-      ],
       [
         "expo-splash-screen",
         {
@@ -70,7 +63,7 @@
       [
         "react-native-nitro-inspire-face",
         {
-          "modelName": "Pikachu",
+          "modelName": "Megatron",
           "modelDir": "./src/assets/models"
         }
       ],
